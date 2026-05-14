@@ -1,34 +1,38 @@
 export type ResourceKey = "food" | "materials" | "ammo" | "fuel" | "medicine";
+export type ResourceMap = Record<ResourceKey, number>;
 
 export type BuildingType = "interior" | "exterior" | "permanent";
+export type Assignment =
+  | "Unassigned"
+  | "Farming"
+  | "Guard Duty"
+  | "Medical"
+  | "Engineering"
+  | "Resting"
+  | "On Mission";
 
-export type ResourceMap = Record<ResourceKey, number>;
+export type BasePath = "none" | "farmstead" | "fortified" | "industrial";
 
 export type Building = {
   name: string;
   type: BuildingType;
   effect: string;
   cost: Partial<ResourceMap>;
+  maxLevel: number;
+};
+
+export type BuiltBuilding = Building & {
+  level: number;
 };
 
 export type Slot = {
   id: string;
   label: string;
   type: BuildingType;
-  building: Building | null;
-  buildingLevel?: number;
+  building: BuiltBuilding | null;
   assignedSurvivorId?: string | null;
   patientSurvivorId?: string | null;
 };
-
-export type Assignment =
-  | "Resting"
-  | "Farming"
-  | "Guard Duty"
-  | "Scavenging"
-  | "Medical"
-  | "Engineering"
-  | "On Mission";
 
 export type Survivor = {
   id: string;
@@ -37,21 +41,6 @@ export type Survivor = {
   health: number;
   stamina: number;
   assignment: Assignment;
-};
-
-export type BasePath = "starter" | "farmstead" | "fortified";
-
-export type BaseLayout = {
-  id: BasePath;
-  name: string;
-  level: number;
-  tagline: string;
-  description: string;
-  bonuses: string[];
-  slots: Slot[];
-  passive: Partial<ResourceMap>;
-  defenseBonus: number;
-  wallBonus: number;
 };
 
 export type ScavengeLocation = {
