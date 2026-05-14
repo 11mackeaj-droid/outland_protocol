@@ -28,8 +28,8 @@ export default function BuildModal({
   if (!selectedSlot || selectedSlot.type === "permanent") return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3 md:items-center md:justify-center md:p-4">
-      <div className="max-h-[calc(100dvh_-_1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-4 pb-[calc(env(safe-area-inset-bottom)_+_1rem)]">
+    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/70 p-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:items-center md:p-4">
+      <div className="max-h-[86dvh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold">
@@ -42,7 +42,7 @@ export default function BuildModal({
 
           <button
             onClick={onClose}
-            className="min-h-10 rounded-lg bg-zinc-800 px-3 py-2 text-sm"
+            className="min-h-10 rounded-xl bg-zinc-800 px-4 py-2 text-sm font-semibold"
           >
             Close
           </button>
@@ -59,7 +59,7 @@ export default function BuildModal({
                   key={building.name}
                   disabled={!affordable}
                   onClick={() => onBuild(building)}
-                  className={`min-h-24 rounded-xl border p-3 text-left active:scale-[0.99] ${
+                  className={`rounded-xl border p-3 text-left ${
                     affordable
                       ? "border-zinc-800 bg-zinc-900 hover:border-amber-600"
                       : "cursor-not-allowed border-zinc-900 bg-zinc-950 opacity-50"

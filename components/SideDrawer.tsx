@@ -16,7 +16,7 @@ export default function SideDrawer({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60">
+    <div className="fixed inset-0 z-[120] bg-black/65">
       <button
         onClick={onClose}
         className="absolute inset-0 h-full w-full cursor-default"
@@ -24,24 +24,24 @@ export default function SideDrawer({
       />
 
       <aside
-        className={`absolute top-0 h-full w-full max-w-md overflow-y-auto border-zinc-800 bg-[#07090c] px-3 pb-[calc(env(safe-area-inset-bottom)_+_1rem)] pt-[calc(env(safe-area-inset-top)_+_1rem)] shadow-2xl sm:p-4 ${
-          side === "left"
-            ? "left-0 border-r"
-            : "right-0 border-l"
+        className={`absolute bottom-0 top-0 h-full w-full overflow-hidden border-zinc-800 bg-[#07090c] shadow-2xl sm:max-w-md ${
+          side === "left" ? "left-0 border-r" : "right-0 border-l"
         }`}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800 bg-[#07090c]/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+1rem)] backdrop-blur">
           <h2 className="text-lg font-bold">{title}</h2>
 
           <button
             onClick={onClose}
-            className="min-h-10 rounded-lg bg-zinc-800 px-3 py-2 text-sm"
+            className="min-h-10 rounded-xl bg-zinc-800 px-4 py-2 text-sm font-semibold"
           >
             Close
           </button>
         </div>
 
-        {children}
+        <div className="h-[calc(100%-5rem)] overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-4">
+          {children}
+        </div>
       </aside>
     </div>
   );

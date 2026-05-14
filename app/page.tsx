@@ -17,8 +17,6 @@ import SurvivorPanel from "../components/SurvivorPanel";
 import TopBar from "../components/TopBar";
 
 import {
-  baseLayouts,
-  baseUpgradeCost,
   initialSlots,
   initialSurvivors,
   scavengeLocations,
@@ -28,15 +26,12 @@ import {
   calculateDefense,
   calculateRoomProduction,
   canAffordBuilding,
-  canAffordCost,
   clampResources,
   countAssignment,
   formatGameTime,
-  getBuildingUpgradeCost,
   getStorageCaps,
   getThreat,
   payBuildingCost,
-  payResourceCost,
   resolveNightAttack,
 } from "../lib/gameLogic";
 
@@ -78,11 +73,6 @@ export default function Home() {
   const [survivorDrawerOpen, setSurvivorDrawerOpen] = useState(false);
   const [logDrawerOpen, setLogDrawerOpen] = useState(false);
 
-  const [baseLayoutId, setBaseLayoutId] = useState("starter");
-  const activeLayout =
-    baseLayouts.find((layout) => layout.id === baseLayoutId) || baseLayouts[0];
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
-
   const [slots, setSlots] = useState<Slot[]>(initialSlots);
   const [survivors, setSurvivors] = useState(initialSurvivors);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
@@ -92,7 +82,9 @@ export default function Home() {
   const [wallIntegrity, setWallIntegrity] = useState(100);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const [availableMissions, setAvailableMissions] = useState<MapMission[]>([]);
+  const [availableMissions, setAvailableMissions] = useState<MapMission[]>(() =>
+    generateMapMissions(8 * 60)
+  );
 
   const [resources, setResources] = useState<ResourceMap>({
     food: 35,
@@ -107,16 +99,12 @@ export default function Home() {
     "08:00 — Shelter systems running on emergency reserves.",
   ]);
 
-  useEffect(() => {
-    setAvailableMissions(generateMapMissions(8 * 60));
-  }, []);
-
   const { day, hour, time } = formatGameTime(minutes);
   const threat = getThreat(hour);
 
-  const roomProduction = calculateRoomProduction(slots, survivors, activeLayout);
-  const defense = calculateDefense(survivors, slots, activeLayout);
-  const storageCaps = getStorageCaps(slots, activeLayout);
+  const roomProduction = calculateRoomProduction(slots, survivors);
+  const defense = calculateDefense(survivors, slots);
+  const storageCaps = getStorageCaps(slots);
 
   const farmingCount = slots.filter(
     (slot) => slot.building?.name === "Garden" && slot.assignedSurvivorId
@@ -137,7 +125,7 @@ export default function Home() {
   ).length;
 
   const resourceRates: ResourceMap = {
-    food: roomProduction.food - survivors.length * (activeLayout.id === "farmstead" ? 0.12 : 0.15),
+    food: roomProduction.food - survivors.length * 0.15,
     materials: roomProduction.materials,
     ammo: roomProduction.ammo,
     fuel: roomProduction.fuel,
@@ -181,7 +169,6 @@ export default function Home() {
           ? {
               ...slot,
               building: null,
-              buildingLevel: undefined,
               assignedSurvivorId: null,
               patientSurvivorId: null,
             }
@@ -218,71 +205,6 @@ export default function Home() {
 
       return nextWall;
     });
-  }
-
-  const canUpgradeBase =
-    activeLayout.level < 2 &&
-    survivors.length >= 4 &&
-    resources.materials >= baseUpgradeCost.materials &&
-    resources.food >= baseUpgradeCost.food &&
-    resources.fuel >= baseUpgradeCost.fuel;
-
-  function chooseBaseUpgrade(layoutId: "farmstead" | "fortified") {
-    if (!canUpgradeBase) return;
-
-    const nextLayout = baseLayouts.find((layout) => layout.id === layoutId);
-    if (!nextLayout) return;
-
-    setResources((prev) =>
-      clampResources(
-        {
-          ...prev,
-          materials: prev.materials - baseUpgradeCost.materials,
-          food: prev.food - baseUpgradeCost.food,
-          fuel: prev.fuel - baseUpgradeCost.fuel,
-        },
-        getStorageCaps(nextLayout.slots, nextLayout)
-      )
-    );
-
-    setBaseLayoutId(layoutId);
-    setSlots(nextLayout.slots.map((slot) => ({ ...slot })));
-    setWallIntegrity(Math.min(100, 75 + nextLayout.wallBonus));
-    setSelectedSlot(null);
-    setUpgradeOpen(false);
-
-    addEvent(
-      `${time} — Base upgraded to ${nextLayout.name}. The base path is now locked in with permanent structures.`,
-      "success"
-    );
-  }
-
-  function upgradeBuildingInSlot(slotId: string) {
-    const slot = slots.find((currentSlot) => currentSlot.id === slotId);
-    if (!slot?.building) return;
-
-    const cost = getBuildingUpgradeCost(slot);
-    if (!canAffordCost(resources, cost)) return;
-
-    setResources((prev) =>
-      clampResources(payResourceCost(prev, cost!), getStorageCaps(slots, activeLayout))
-    );
-
-    setSlots((prev) =>
-      prev.map((currentSlot) =>
-        currentSlot.id === slotId
-          ? {
-              ...currentSlot,
-              buildingLevel: Math.min(3, (currentSlot.buildingLevel ?? 1) + 1),
-            }
-          : currentSlot
-      )
-    );
-
-    addEvent(
-      `${time} — ${slot.building.name} upgraded to level ${(slot.buildingLevel ?? 1) + 1}.`,
-      "success"
-    );
   }
 
   function repairWall() {
@@ -350,7 +272,7 @@ export default function Home() {
                   const randomness = 0.6 + Math.random() * 0.8;
                   const finalAmount = Math.max(
                     1,
-                    Math.floor(Number(value ?? 0) * randomness)
+                    Math.floor((value ?? 0) * randomness)
                   );
 
                   next[key as ResourceKey] += finalAmount;
@@ -366,7 +288,7 @@ export default function Home() {
 
                 return {
                   ...survivor,
-                  assignment: "Resting",
+                  assignment: "Idle",
                   stamina: Math.max(
                     0,
                     survivor.stamina -
@@ -579,7 +501,6 @@ export default function Home() {
           ? {
               ...slot,
               building,
-              buildingLevel: 1,
               assignedSurvivorId: null,
               patientSurvivorId: null,
             }
@@ -726,9 +647,10 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#07090c] text-zinc-100">
+    <main className="h-dvh overflow-hidden bg-[#07090c] text-zinc-100">
       {activeTab === "shelter" && (
-        <div className="mx-auto max-w-7xl space-y-3 px-3 pb-28 pt-[calc(env(safe-area-inset-top)_+_0.75rem)] sm:space-y-4 sm:p-4 sm:pb-28">
+        <div className="h-dvh overflow-y-auto px-3 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:px-4">
+          <div className="mx-auto max-w-7xl space-y-4">
           <TopBar
             day={day}
             time={time}
@@ -745,12 +667,6 @@ export default function Home() {
             survivors={survivors}
             threat={threat}
             wallIntegrity={wallIntegrity}
-            layout={activeLayout}
-            resources={resources}
-            canUpgradeBase={canUpgradeBase}
-            baseUpgradeCost={baseUpgradeCost}
-            onOpenBaseUpgrade={() => setUpgradeOpen(true)}
-            onUpgradeBuilding={upgradeBuildingInSlot}
             onSelectSlot={setSelectedSlot}
             onAssignSurvivor={assignSurvivorToSlot}
             onAssignPatient={assignPatientToInfirmary}
@@ -764,11 +680,12 @@ export default function Home() {
             resources={resources}
             onRepairWall={repairWall}
           />
+          </div>
         </div>
       )}
 
       {activeTab === "map" && (
-        <div className="fixed inset-x-0 top-0 bottom-[calc(72px_+_env(safe-area-inset-bottom))] z-10 bg-[#07090c]">
+        <div className="fixed inset-x-0 top-0 bottom-[calc(env(safe-area-inset-bottom)+5.4rem)] z-10 bg-[#07090c]">
           <MapView
             survivors={survivors}
             missions={missions}
@@ -778,22 +695,6 @@ export default function Home() {
           />
         </div>
       )}
-
-      <div className="fixed left-2 right-2 top-[calc(env(safe-area-inset-top)_+_0.5rem)] z-[70] flex justify-between gap-2 sm:left-3 sm:right-auto">
-        <button
-          onClick={() => setSurvivorDrawerOpen(true)}
-          className="min-h-11 rounded-xl border border-zinc-800 bg-black/75 px-4 py-2 text-xs font-semibold text-zinc-200 backdrop-blur active:scale-95"
-        >
-          Survivors
-        </button>
-
-        <button
-          onClick={() => setLogDrawerOpen(true)}
-          className="min-h-11 rounded-xl border border-zinc-800 bg-black/75 px-4 py-2 text-xs font-semibold text-zinc-200 backdrop-blur active:scale-95"
-        >
-          Log
-        </button>
-      </div>
 
       <EventToasts toasts={toasts} />
 
@@ -805,7 +706,7 @@ export default function Home() {
       >
         <SurvivorPanel
           survivors={survivors}
-          slots={slots}
+          onAssignmentChange={updateAssignment}
         />
       </SideDrawer>
 
@@ -825,45 +726,6 @@ export default function Home() {
         />
       </SideDrawer>
 
-      {upgradeOpen && (
-        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/80 p-3 sm:items-center sm:p-4">
-          <div className="max-h-[calc(100dvh_-_1.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-4 pb-[calc(env(safe-area-inset-bottom)_+_1rem)] shadow-2xl">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-amber-400">Base Evolution</p>
-                <h2 className="text-2xl font-bold">Choose Your Level 2 Base Path</h2>
-                <p className="mt-1 text-sm text-zinc-500">Pick the direction this base grows. This keeps the upgrade-path choice, but it is controlled from the Command Center.</p>
-              </div>
-              <button onClick={() => setUpgradeOpen(false)} className="rounded-lg bg-zinc-800 px-3 py-2 text-sm">Close</button>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              {baseLayouts
-                .filter((layout) => layout.level === 2)
-                .map((layout) => (
-                  <button
-                    key={layout.id}
-                    onClick={() => chooseBaseUpgrade(layout.id as "farmstead" | "fortified")}
-                    disabled={!canUpgradeBase}
-                    className="min-h-36 rounded-2xl border border-zinc-800 bg-zinc-900 p-4 text-left transition hover:border-amber-500 active:scale-[0.99] disabled:opacity-50"
-                  >
-                    <p className="text-xs uppercase text-zinc-500">Level {layout.level}</p>
-                    <h3 className="mt-1 text-xl font-bold text-zinc-100">{layout.name}</h3>
-                    <p className="mt-2 text-sm text-zinc-400">{layout.description}</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {layout.bonuses.map((bonus) => (
-                        <span key={bonus} className="rounded-full border border-zinc-700 bg-black/40 px-2 py-1 text-xs text-zinc-300">
-                          {bonus}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       <BuildModal
         selectedSlot={selectedSlot}
         resources={resources}
@@ -871,7 +733,12 @@ export default function Home() {
         onBuild={buildInSlot}
       />
 
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onOpenSurvivors={() => setSurvivorDrawerOpen(true)}
+        onOpenLog={() => setLogDrawerOpen(true)}
+      />
     </main>
   );
 }

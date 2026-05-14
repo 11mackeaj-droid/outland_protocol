@@ -200,7 +200,7 @@ export default function MapView({
   }
 
   return (
-    <section className="relative h-full w-full overflow-hidden bg-zinc-950">
+    <section className="relative h-full w-full overflow-hidden bg-zinc-950 pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">
       <div
         ref={viewportRef}
         onPointerDown={startDrag}
@@ -343,7 +343,7 @@ export default function MapView({
         </div>
       </div>
 
-      <div className="fixed right-3 top-3 z-50 rounded-xl border border-zinc-800 bg-black/75 p-2 backdrop-blur">
+      <div className="fixed right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 rounded-xl border border-zinc-800 bg-black/75 p-2 backdrop-blur">
         <div className="mb-2 text-center text-[11px] text-zinc-400">
           {Math.round(zoom * 100)}%
         </div>
@@ -351,28 +351,28 @@ export default function MapView({
         <div className="grid gap-2">
           <button
             onClick={zoomIn}
-            className="min-h-11 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-bold text-zinc-100"
+            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-bold text-zinc-100"
           >
             +
           </button>
 
           <button
             onClick={zoomOut}
-            className="min-h-11 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-bold text-zinc-100"
+            className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-bold text-zinc-100"
           >
             −
           </button>
 
           <button
             onClick={centerBase}
-            className="min-h-11 rounded-lg border border-amber-700 bg-amber-950 px-3 py-2 text-xs font-semibold text-amber-200"
+            className="rounded-lg border border-amber-700 bg-amber-950 px-3 py-2 text-xs font-semibold text-amber-200"
           >
             Base
           </button>
         </div>
       </div>
 
-      <div className="fixed bottom-[calc(84px_+_env(safe-area-inset-bottom))] left-3 right-3 z-40 rounded-xl border border-zinc-800 bg-black/70 p-3 text-xs text-zinc-400 backdrop-blur md:right-auto md:max-w-sm">
+      <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.8rem)] left-3 z-40 max-w-[calc(100vw-1.5rem)] rounded-xl border border-zinc-800 bg-black/70 p-3 text-xs text-zinc-400 backdrop-blur md:max-w-sm">
         <p className="font-semibold text-zinc-200">Satellite Outlands Map</p>
         <p>
           Available{" "}
@@ -385,8 +385,8 @@ export default function MapView({
       </div>
 
       {selectedMission && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center sm:p-4">
-          <div className="max-h-[calc(100dvh_-_1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-4 pb-[calc(env(safe-area-inset-bottom)_+_1rem)] shadow-2xl">
+        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/70 p-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:items-center sm:p-4">
+          <div className="max-h-[86dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-4 shadow-2xl">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase text-zinc-500">
@@ -397,7 +397,7 @@ export default function MapView({
 
               <button
                 onClick={() => setSelectedMission(null)}
-                className="min-h-10 rounded-lg bg-zinc-800 px-3 py-2 text-sm"
+                className="rounded-lg bg-zinc-800 px-3 py-1 text-sm"
               >
                 Close
               </button>
@@ -449,7 +449,7 @@ export default function MapView({
                     setSelectedMission(null);
                     event.currentTarget.value = "";
                   }}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-3 text-sm text-zinc-100 outline-none"
+                  className="mb-3 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-4 text-base text-zinc-100 outline-none"
                 >
                   <option value="">Dispatch survivor...</option>
                   {availableSurvivors.map((survivor) => (
